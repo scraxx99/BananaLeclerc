@@ -9,7 +9,6 @@ import {
     Collection,
     Events,
     GatewayIntentBits,
-    MessageFlags,
 } from 'discord.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,44 +20,14 @@ const client = new Client({
 
 client.commands = new Collection();
 
+/* ---------------- READY EVENT ---------------- */
+
 client.once(Events.ClientReady, (readyClient) => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
-client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+/* ---------------- LOAD EVENTS ---------------- */
 
-    const command = interaction.client.commands.get(
-        interaction.commandName
-    );
-
-    if (!command) {
-        console.error(
-            `No command matching ${interaction.commandName} was found.`
-        );
-        return;
-    }
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({
-                content: 'There was an error while executing this command!',
-                flags: MessageFlags.Ephemeral,
-            });
-        } else {
-            await interaction.reply({
-                content: 'There was an error while executing this command!',
-                flags: MessageFlags.Ephemeral,
-            });
-        }
-    }
-});
-
-// Load events
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs
     .readdirSync(eventsPath)
@@ -67,24 +36,22 @@ const eventFiles = fs
 for (const file of eventFiles) {
     const filePath = path.join(eventsPath, file);
 
-    const eventModule = await import(
-        pathToFileURL(filePath).href
-    );
-
+    const eventModule = await import(pathToFileURL(filePath).href);
     const event = eventModule.default ?? eventModule;
 
     if (event.once) {
         client.once(event.name, (...args) =>
-            event.execute(...args)
+            event.execute(...args, client)
         );
     } else {
         client.on(event.name, (...args) =>
-            event.execute(...args)
+            event.execute(...args, client)
         );
     }
 }
 
-// Load commands
+/* ---------------- LOAD COMMANDS ---------------- */
+
 async function loadCommands() {
     const foldersPath = path.join(__dirname, 'commands');
 
@@ -98,9 +65,7 @@ async function loadCommands() {
     for (const folder of commandFolders) {
         const commandsPath = path.join(foldersPath, folder);
 
-        if (!fs.statSync(commandsPath).isDirectory()) {
-            continue;
-        }
+        if (!fs.statSync(commandsPath).isDirectory()) continue;
 
         const commandFiles = fs
             .readdirSync(commandsPath)
@@ -117,17 +82,14 @@ async function loadCommands() {
                 const command =
                     commandModule.default ?? commandModule;
 
-                if (
-                    'data' in command &&
-                    'execute' in command
-                ) {
+                if ('data' in command && 'execute' in command) {
                     client.commands.set(
                         command.data.name,
                         command
                     );
                 } else {
                     console.warn(
-                        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+                        `[WARNING] Missing "data" or "execute" in ${filePath}`
                     );
                 }
             } catch (error) {
@@ -142,10 +104,10 @@ async function loadCommands() {
 
 await loadCommands();
 
+/* ---------------- LOGIN ---------------- */
+
 if (!process.env.DISCORD_TOKEN) {
-    console.error(
-        'DISCORD_TOKEN is missing from your .env file'
-    );
+    console.error('DISCORD_TOKEN is missing from .env');
     process.exit(1);
 }
 
