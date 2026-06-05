@@ -28,10 +28,14 @@ client.once(Events.ClientReady, (readyClient) => {
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const command = interaction.client.commands.get(interaction.commandName);
+    const command = interaction.client.commands.get(
+        interaction.commandName
+    );
 
     if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
+        console.error(
+            `No command matching ${interaction.commandName} was found.`
+        );
         return;
     }
 
@@ -53,19 +57,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 });
+
+// Load events
 const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
+const eventFiles = fs
+    .readdirSync(eventsPath)
+    .filter((file) => file.endsWith('.js'));
 
 for (const file of eventFiles) {
-	const filePath = path.join(eventsPath, file);
-	const eventModule = await import(pathToFileURL(filePath).href);
-	const event = eventModule.default ?? eventModule;
-	if (event.once) {
-		client.once(event.name, (...args) => event.execute(...args));
-	} else {
-		client.on(event.name, (...args) => event.execute(...args));
-	}
+    const filePath = path.join(eventsPath, file);
+
+    const eventModule = await import(
+        pathToFileURL(filePath).href
+    );
+
+    const event = eventModule.default ?? eventModule;
+
+    if (event.once) {
+        client.once(event.name, (...args) =>
+            event.execute(...args)
+        );
+    } else {
+        client.on(event.name, (...args) =>
+            event.execute(...args)
+        );
+    }
 }
+
+// Load commands
 async function loadCommands() {
     const foldersPath = path.join(__dirname, 'commands');
 
@@ -79,7 +98,9 @@ async function loadCommands() {
     for (const folder of commandFolders) {
         const commandsPath = path.join(foldersPath, folder);
 
-        if (!fs.statSync(commandsPath).isDirectory()) continue;
+        if (!fs.statSync(commandsPath).isDirectory()) {
+            continue;
+        }
 
         const commandFiles = fs
             .readdirSync(commandsPath)
@@ -93,10 +114,17 @@ async function loadCommands() {
                     pathToFileURL(filePath).href
                 );
 
-                const command = commandModule.default ?? commandModule;
+                const command =
+                    commandModule.default ?? commandModule;
 
-                if ('data' in command && 'execute' in command) {
-                    client.commands.set(command.data.name, command);
+                if (
+                    'data' in command &&
+                    'execute' in command
+                ) {
+                    client.commands.set(
+                        command.data.name,
+                        command
+                    );
                 } else {
                     console.warn(
                         `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
@@ -115,7 +143,9 @@ async function loadCommands() {
 await loadCommands();
 
 if (!process.env.DISCORD_TOKEN) {
-    console.error('DISCORD_TOKEN is missing from .env');
+    console.error(
+        'DISCORD_TOKEN is missing from your .env file'
+    );
     process.exit(1);
 }
 
