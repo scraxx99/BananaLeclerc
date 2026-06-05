@@ -53,7 +53,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 });
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
 
+for (const file of eventFiles) {
+	const filePath = path.join(eventsPath, file);
+	const eventModule = await import(pathToFileURL(filePath).href);
+	const event = eventModule.default ?? eventModule;
+	if (event.once) {
+		client.once(event.name, (...args) => event.execute(...args));
+	} else {
+		client.on(event.name, (...args) => event.execute(...args));
+	}
+}
 async function loadCommands() {
     const foldersPath = path.join(__dirname, 'commands');
 
