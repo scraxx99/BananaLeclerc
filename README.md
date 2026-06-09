@@ -7,3 +7,10 @@ FEATURES :) ------------------------------
 * F1 Information: Get Basic information about drivers and numbers
 * Leclerc Radio: Get REAL Audio clips of Leclerc on the circuit
   And MORE
+COMMANDS -------->
+/drivers - Show f1 drivers
+/ferraristrategy - Shows a real strategy moment from team Ferrari from a specific race
+/leclercchaos - Shows afunny Charles Leclerc moment from his radio
+/leclercmood - Shows Leclerc's mood with a funny comment underneath
+/leclercphoto - Generates a random photo of leclerc once every hour
+/leclercradio - Generates a random radio clip of charles leclerc
